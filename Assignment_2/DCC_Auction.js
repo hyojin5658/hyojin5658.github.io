@@ -268,7 +268,7 @@ window.addEventListener('load', function() {
   }
   // Now you can start your app & access web3 freely:
   document.getElementById('contractAddr').innerHTML = "gggg";
- // startApp();
+  startApp();
 });
 
 function startApp() {
