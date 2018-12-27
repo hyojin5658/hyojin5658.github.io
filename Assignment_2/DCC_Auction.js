@@ -1,6 +1,20 @@
-let contractAddress = '0xff63058c0856bf33421d9481265cc35f4d7b4e23';
+let contractAddress = '0x73e8f775dca2db4c50732336f9588ea02399aec3';
 let abi =
 [
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getuserUsedToken",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256[6]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
 	{
 		"constant": true,
 		"inputs": [],
@@ -101,24 +115,6 @@ let abi =
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "candidateName",
-				"type": "bytes32"
-			},
-			{
-				"name": "tokenCountForVote",
-				"type": "uint256"
-			}
-		],
-		"name": "vote",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [
 			{
@@ -181,6 +177,28 @@ let abi =
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "candidateName",
+				"type": "bytes32"
+			},
+			{
+				"name": "tokenCountForVote",
+				"type": "uint256"
+			},
+			{
+				"name": "tokenCountNo",
+				"type": "uint256"
+			}
+		],
+		"name": "vote",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -248,12 +266,13 @@ let abi =
 	}
 ];
 
-let simpleVoteContract;
-let simpleVote;
+let DCC_auctionContract;
+let DCC_auction;
 let accountAddress;
 let currentEtherBalance;
 let currentTokenBalance;
 let tokenPrice;
+let productNo;
 
 window.addEventListener('load', function() {
 
@@ -264,16 +283,16 @@ window.addEventListener('load', function() {
   } else {
     console.log('No web3? You should consider trying MetaMask!')
     // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-    window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+	window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8547"));
   }
   // Now you can start your app & access web3 freely:
-  document.getElementById('contractAddr').innerHTML = "gggg";
+
   startApp();
 });
 
 function startApp() {
-  simpleVoteContract = web3.eth.contract(abi);
-  simpleVote = simpleVoteContract.at(contractAddress);
+  DCC_auctionContract = web3.eth.contract(abi);
+  DCC_auction = DCC_auctionContract.at(contractAddress);
   document.getElementById('contractAddr').innerHTML = getLink(contractAddress);
   
 
@@ -293,8 +312,20 @@ function getValue() {
   getToken();
   getTokenInfo();
   getCandidateInfo();
+  getuserVoteInfo();
 }
 
+function getuserVoteInfo()
+{
+	simpleVote.getuserUsedToken(function(e,r){
+		document.getElementById('myself_iphone7').innerHTML=r[0].toString();
+		document.getElementById('myself_iphone8').innerHTML=r[1].toString();
+		document.getElementById('myself_iphoneX').innerHTML=r[2].toString();
+		document.getElementById('myself_galaxyS9').innerHTML=r[3].toString();
+		document.getElementById('myself_galaxyNote9').innerHTML=r[4].toString();
+		document.getElementById('myself_LGG7').innerHTML=r[5].toString();
+	});
+}
 function getEther() {
   web3.eth.getBalance(accountAddress, function(e,r){
     document.getElementById('ethValue').innerHTML =web3.fromWei(r.toString()) + "ETH";
@@ -308,13 +339,6 @@ function getToken() {
 }
 
 function getTokenInfo() {
-
-//   simpleVote.getTotalToken(function(e,r){
-//     document.getElementById('tokens-total').innerHTML = r.toString();
-//   });
-//   simpleVote.getBalanceTokens(function(e,r){
-//     document.getElementById('tokens-sellable').innerHTML = r.toString();
-//   });
   simpleVote.getTokenPrice(function(e,r){
     tokenPrice = parseFloat(web3.fromWei(r.toString()));
     document.getElementById('token-cost').innerHTML = tokenPrice + "ETH";
@@ -327,26 +351,60 @@ function getTokenInfo() {
 function getCandidateInfo() {
   simpleVote.getVotesReceivedFor(function(e,r){
    
-      document.getElementById('iphone 7').innerHTML = r[0].toString();
-      document.getElementById('iphone 8').innerHTML = r[1].toString();
-      document.getElementById('iphone X').innerHTML = r[2].toString();
-      document.getElementById('Galaxy S9').innerHTML = r[3].toString();
-      document.getElementById('Galaxy Note 9').innerHTML = r[4].toString();
-      document.getElementById('LG G7').innerHTML = r[5].toString();
+      document.getElementById('highest_iphone7').innerHTML = r[0].toString();
+      document.getElementById('highest_iphone8').innerHTML = r[1].toString();
+      document.getElementById('highest_iphoneX').innerHTML = r[2].toString();
+      document.getElementById('highest_galaxyS9').innerHTML = r[3].toString();
+      document.getElementById('highest_galaxyNote9').innerHTML = r[4].toString();
+	  document.getElementById('highest_LGG7').innerHTML = r[5].toString();
+	  
   });
 }
 
-function voteForCandidate() {
-  let candidateName = $("#candidate").val();
-  let voteTokens = $("#vote-tokens").val();
-  $("#msg").html("Vote has been submitted. The vote count will increment as soon as the vote is recorded on the blockchain. Please wait.")
-  $("#candidate").val("");
-  $("#vote-tokens").val("");
 
-  simpleVote.vote(candidateName, voteTokens, function (e, r){
-    getCandidateInfo();
-  });
-}
+function voteForProduct(productNo) {
+	let candidateName;
+	let voteTokens;
+	switch(productNo){
+		case 0:
+			candidateName = "iphone 7";
+			voteTokens = $("#tb_iphone7").val();
+			$("#tb_LGG7").val("");
+			break;
+		case 1:
+			candidateName = "iphone 8";
+			voteTokens = $("#tb_iphone8").val();
+			$("#tb_LGG7").val("");
+			break;
+		case 2:
+			candidateName = "iphone X";
+			voteTokens = $("#tb_iphoneX").val();
+			$("#tb_LGG7").val("");
+			break;
+		case 3:
+			candidateName = "Galaxy S9";
+			voteTokens = $("#tb_galaxyS9").val();
+			$("#tb_LGG7").val("");
+			break;
+		case 4:
+			candidateName = "Galaxy Note 9";
+			voteTokens = $("#tb_galaxyNote9").val();
+			$("#tb_LGG7").val("");
+			break;
+		case 5:	
+			candidateName = "LG G7";
+			voteTokens = $("#tb_LGG7").val();
+			$("#tb_LGG7").val("");
+			break;
+	}
+	$("#msg").html("Vote has been submitted. The vote count will increment as soon as the vote is recorded on the blockchain. Please wait.")
+
+	simpleVote.vote(candidateName, voteTokens, productNo, function (e, r){
+	  getCandidateInfo();
+	  getuserVoteInfo();
+	});
+	
+  }
 
 function buyTokens() {
   let tokensToBuy = $("#buy").val();
